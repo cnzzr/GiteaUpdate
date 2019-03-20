@@ -32,7 +32,7 @@ import java.util.*;
  */
 @Slf4j
 public class GiteaMaster {
-    //private static Logger logger = LoggerFactory.getLogger(GiteaMaster.class);
+    //见 lombok.config private static Logger logger = LoggerFactory.getLogger(GiteaMaster.class);
     static String GiteaMaster = "https://dl.gitea.io/gitea/master/";
 
     public static GiteaMaster GetInstance() {
@@ -123,6 +123,7 @@ public class GiteaMaster {
      * Downloads resource to a file, potentially very efficiently.
      */
     private static void downloadFile(String url, File file) throws IOException {
+        long start = System.currentTimeMillis();
         URLConnection urlConnection = new URL(url).openConnection();
         urlConnection.setReadTimeout(15 * 60 * 1000);
         //urlConnection.addRequestProperty("REFERER","https://dl.gitea.io/gitea/master/");
@@ -135,6 +136,7 @@ public class GiteaMaster {
         FileOutputStream fos = new FileOutputStream(file);
         // 24=16M 26=64M 28=256M
         fos.getChannel().transferFrom(rbc, 0, 1 << 30);
+        logger.info("下载耗时 {} ms", System.currentTimeMillis() - start);
     }
 
     /**

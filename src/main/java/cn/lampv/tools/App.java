@@ -14,9 +14,8 @@ public class App {
     public static void main(String[] args) {
         try {
             GiteaMaster.GetInstance().Update();
-            new JDateTime("03/19/2019 07:22:46 AM","MM/DD/YYYY hh:mm:ss a").convertToDate();
         } catch (Exception exc) {
-            logger.error("出错", exc);
+            logger.error("Gitea Update failed", exc);
         }
     }
 }

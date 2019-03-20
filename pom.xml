@@ -11,8 +11,10 @@
     <packaging>jar</packaging>
 
     <name>GiteaUpdate</name>
-    <!-- FIXME change it to the project's website -->
+    <!-- Gitea project's website -->
     <url>https://dl.gitea.io/gitea/master/</url>
+    <description>实现根据配置文件要求下载Gitea给定版本的最新发布文件 并且可实现下载文件校验，自动替换服务可执行程序文件。
+    </description>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
