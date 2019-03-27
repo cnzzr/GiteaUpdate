@@ -45,19 +45,29 @@ public class GiteaMaster {
      * @return
      */
     public boolean Update() {
-        String giteaFile = "gitea.exe";
+        //String fullVersionName = "gitea-master-windows-4.0-386.exe.xz";
         String fullVersionName = "gitea-master-windows-4.0-amd64.exe";
+        String giteaFile = "gitea.exe";
+        File exe = new File(giteaFile);
+        if (!exe.exists()) {
+            logger.error("{} 不存在", giteaFile);
+        } else if (!exe.canWrite()) {
+            logger.error("{} 无法写入,请修改文件权限或计划任务执行权限", giteaFile);
+            return false;
+        }
+
         try {
             List<UpdateUrl> toDownload = FetchVersion(fullVersionName);
             for (UpdateUrl model : toDownload) {
                 File file = new File(model.getName());
                 if (file.exists()) {
                     String oldFileHash = calcHash(file);
+                    //TODO hash一致时还需要判断主程序文件是否匹配，有可能上次更新未成功替换
                     if (model.getSha256().equalsIgnoreCase(oldFileHash)) {
                         logger.info("文件已存在且Hash一致，本地文件={} sha256={}", file.getCanonicalPath(), oldFileHash);
                         continue;
                     }
-                    logger.info("本地文件已经存在，Hash与最新版本不一致，删除本地文件后重新下载");
+                    logger.info("本地文件已经存在，Hash与最新版本不一致，将删除本地文件后重新下载");
                     FileUtil.delete(file);
                 }
                 // 2下载文件
@@ -71,17 +81,45 @@ public class GiteaMaster {
 
                 String fileHash = calcHash(file);
                 if (!model.getSha256().equalsIgnoreCase(fileHash)) {
-                    logger.error("文件Hash不匹配，本地文件hash={} sha256={}", fileHash, model.getSha256());
+                    logger.error("文件下载失败。Hash不匹配，本地文件hash={} sha256={}", fileHash, model.getSha256());
                     continue;
                 }
                 //停止服务
+                boolean isStoped = exec("net stop gitea2");
                 //备份原文件
-                FileUtil.move(file, new File(giteaFile));
-                //启动服务
-                //break
+                if (isStoped) {
+                    FileUtil.move(file, new File(giteaFile));
+                    //启动服务
+                    boolean isStarted = exec("net start gitea2");
+                    //break
+                    return isStarted;
+                }
             }
         } catch (Exception exc) {
             logger.error("更新Gitea失败", exc);
+        }
+        return false;
+    }
+
+    private boolean exec(String cmd) {
+        Runtime runtime = Runtime.getRuntime();
+        try {
+            Process process = runtime.exec(cmd);
+            //打印执行的输出结果
+            InputStream is = process.getInputStream();
+            InputStreamReader isr = new InputStreamReader(is, "gbk"); //gbk：解决输出乱码
+            BufferedReader br = new BufferedReader(isr);
+            StringBuilder stringBuilder = new StringBuilder();
+            String line;
+            while ((line = br.readLine()) != null) {
+                stringBuilder.append(line);
+            }
+            logger.debug("命令输出 {}", stringBuilder);
+            return true;
+        } catch (UnsupportedEncodingException e) {
+            logger.error("exec获取命令输出", e);
+        } catch (IOException e) {
+            logger.error("exec执行命令", e);
         }
         return false;
     }
