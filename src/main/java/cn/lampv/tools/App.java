@@ -11,15 +11,15 @@ public class App {
     private static Logger logger = LoggerFactory.getLogger(App.class);
 
     public static void main(String[] args) {
-        System.out.println("Gitea Update: start....");
+        System.out.println("GiteaUpdate: start....");
         try {
             GiteaMaster.GetInstance().Update();
-            System.out.println(" finished.");
+            System.out.println("GiteaUpdate: finished");
         } catch (Exception exc) {
-            System.err.println(" error: " + exc.getMessage());
-            logger.error("Gitea Update failed", exc);
+            System.err.println("GiteaUpdate: error msg is: " + exc.getMessage());
+            logger.error("Update failed", exc);
         } finally {
-            System.out.println(" exit.");
+            System.out.println("GiteaUpdate: exit.");
         }
     }
 }
