@@ -1,3 +1,7 @@
+target/
+log/
+*.exe
+
 # Compiled class file
 *.class
 
