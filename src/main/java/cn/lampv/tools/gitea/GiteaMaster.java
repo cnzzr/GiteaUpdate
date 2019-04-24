@@ -88,11 +88,19 @@ public class GiteaMaster {
                 boolean isStoped = exec("net stop gitea2");
                 //备份原文件
                 if (isStoped) {
-                    FileUtil.move(file, new File(giteaFile));
-                    //启动服务
-                    boolean isStarted = exec("net start gitea2");
+                    boolean r = false;
+                    try {
+                        FileUtil.copyFile(file, new File(giteaFile));
+                        //启动服务
+                        r = exec("net start gitea2");
+                    } finally {
+                        // 如果exe文件替换失败则重启gitea服务
+                        if (!r) {
+                            exec("net start gitea2");
+                        }
+                    }
                     //break
-                    return isStarted;
+                    return r;
                 }
             }
         } catch (Exception exc) {
