@@ -210,6 +210,8 @@ public class GiteaMaster {
             name = element.getElementsByClass("name").text();
             modified = element.getElementsByClass("date").text();
             if (StringUtil.isNotBlank(name) && name.contains(match)) {
+                // class="name" 对应到了两个标签
+                name = element.getElementsByClass("name").last().text();
                 name = StringUtil.replaceChars(name, new char[]{'\r', '\n', '\t'}, new char[]{' ', ' ', ' '}).trim();
                 // PGP SIGNATURE https://dl.gitea.io/gitea/master/gitea-master-windows-4.0-amd64.exe.asc
                 if (name.endsWith("asc")) {
