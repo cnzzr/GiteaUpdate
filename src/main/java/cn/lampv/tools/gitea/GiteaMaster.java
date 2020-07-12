@@ -208,7 +208,7 @@ public class GiteaMaster {
 
         for (Element element : elements) {
             name = element.getElementsByClass("name").text();
-            modified = element.getElementsByClass("modified").text();
+            modified = element.getElementsByClass("date").text();
             if (StringUtil.isNotBlank(name) && name.contains(match)) {
                 name = StringUtil.replaceChars(name, new char[]{'\r', '\n', '\t'}, new char[]{' ', ' ', ' '}).trim();
                 // PGP SIGNATURE https://dl.gitea.io/gitea/master/gitea-master-windows-4.0-amd64.exe.asc
@@ -242,7 +242,7 @@ public class GiteaMaster {
     }
 
     /**
-     * 取 sha356文件内容
+     * 取 sha256文件内容
      *
      * @param url
      * @return
