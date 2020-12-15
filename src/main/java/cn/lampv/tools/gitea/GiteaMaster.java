@@ -34,6 +34,7 @@ import java.util.*;
 public class GiteaMaster {
     //见 lombok.config private static Logger logger = LoggerFactory.getLogger(GiteaMaster.class);
     static String GiteaMaster = "https://dl.gitea.io/gitea/master/";
+    static String ServiceName = "gitea2";
 
     public static GiteaMaster GetInstance() {
         return new GiteaMaster();
@@ -85,23 +86,22 @@ public class GiteaMaster {
                     continue;
                 }
                 //停止服务
-                boolean isStoped = exec("net stop gitea2");
+                boolean isStoped = exec("net stop " + ServiceName);
+                logger.info("停止服务 {}", isStoped);
                 //备份原文件
+                boolean r = false;
                 if (isStoped) {
-                    boolean r = false;
                     try {
                         FileUtil.copyFile(file, new File(giteaFile));
                         //启动服务
-                        r = exec("net start gitea2");
-                    } finally {
-                        // 如果exe文件替换失败则重启gitea服务
-                        if (!r) {
-                            exec("net start gitea2");
-                        }
+                        r = exec("net start " + ServiceName);
+                    } catch (Exception e) {
+                        //Ignored
                     }
-                    //break
-                    return r;
                 }
+                //最后必须要启动服务
+                exec("net start " + ServiceName);
+                return r;
             }
         } catch (Exception exc) {
             logger.error("更新Gitea失败", exc);
@@ -123,11 +123,14 @@ public class GiteaMaster {
                 stringBuilder.append(line);
             }
             logger.debug("命令输出 {}", stringBuilder);
+            process.waitFor();
             return true;
         } catch (UnsupportedEncodingException e) {
             logger.error("exec获取命令输出", e);
         } catch (IOException e) {
             logger.error("exec执行命令", e);
+        } catch (InterruptedException ie) {
+            logger.error("exec等待命令完成", ie);
         }
         return false;
     }
