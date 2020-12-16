@@ -50,42 +50,57 @@ public class GiteaMaster {
         String fullVersionName = "gitea-master-windows-4.0-amd64.exe";
         String giteaFile = "gitea.exe";
         File exe = new File(giteaFile);
+        String exeHash = "";
         if (!exe.exists()) {
             logger.error("{} 不存在", giteaFile);
         } else if (!exe.canWrite()) {
             logger.error("{} 无法写入,请修改文件权限或计划任务执行权限", giteaFile);
             return false;
+        } else {
+            try {
+                exeHash = calcHash(exe);
+            } catch (Exception e) {
+                logger.error("{} 无法计算Hash，异常信息 {}", giteaFile, e.getMessage());
+            }
         }
 
         try {
             List<UpdateUrl> toDownload = FetchVersion(fullVersionName);
+
             for (UpdateUrl model : toDownload) {
                 File file = new File(model.getName());
                 if (file.exists()) {
                     String oldFileHash = calcHash(file);
-                    //TODO hash一致时还需要判断主程序文件是否匹配，有可能上次更新未成功替换
                     if (model.getSha256().equalsIgnoreCase(oldFileHash)) {
                         logger.info("文件已存在且Hash一致，本地文件={} sha256={}", file.getCanonicalPath(), oldFileHash);
+                        //hash一致时还需要判断主程序文件是否匹配，有可能上次更新未成功替换
+                        if(oldFileHash.equalsIgnoreCase(exeHash)) {
+                            logger.info("文件与主程序Hash一致，结束");
+                            continue;
+                        } else {
+                            // goto Stop service and replace gitea.exe
+                        }
+                    } else {
+                        logger.info("本地文件已经存在，Hash与最新版本不一致，将删除本地文件后重新下载");
+                        FileUtil.delete(file);
+                    }
+                } else {
+                    // 2下载文件
+                    String url = model.getUrl();
+                    downloadFile(url, file);
+                    if (!file.exists()) {
                         continue;
                     }
-                    logger.info("本地文件已经存在，Hash与最新版本不一致，将删除本地文件后重新下载");
-                    FileUtil.delete(file);
-                }
-                // 2下载文件
-                // 3 检查文件Hash
-                String url = model.getUrl();
-                downloadFile(url, file);
-                if (!file.exists()) {
-                    continue;
-                }
-                logger.info("文件下载成功 {}", file.getCanonicalPath());
+                    logger.info("文件下载成功 {}", file.getCanonicalPath());
 
-                String fileHash = calcHash(file);
-                if (!model.getSha256().equalsIgnoreCase(fileHash)) {
-                    logger.error("文件下载失败。Hash不匹配，本地文件hash={} sha256={}", fileHash, model.getSha256());
-                    continue;
+                    // 3 检查文件Hash
+                    String fileHash = calcHash(file);
+                    if (!model.getSha256().equalsIgnoreCase(fileHash)) {
+                        logger.error("文件下载失败。Hash不匹配，本地文件hash={} sha256={}", fileHash, model.getSha256());
+                        continue;
+                    }
                 }
-                //停止服务
+                // 4 停止服务
                 boolean isStoped = exec("net stop " + ServiceName);
                 logger.info("停止服务 {}", isStoped);
                 //备份原文件
@@ -101,11 +116,14 @@ public class GiteaMaster {
                 }
                 //最后必须要启动服务
                 exec("net start " + ServiceName);
+                logger.info("更新成功！");
                 return r;
             }
+
         } catch (Exception exc) {
-            logger.error("更新Gitea失败", exc);
+            logger.error("更新Gitea发生异常", exc);
         }
+        logger.info("更新失败");
         return false;
     }
 
