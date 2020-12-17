@@ -1,12 +1,10 @@
 package cn.lampv.tools.gitea;
 
 import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.serializer.JSONSerializer;
 import jodd.datetime.JDateTime;
 import jodd.http.HttpRequest;
 import jodd.http.HttpResponse;
 import jodd.io.FileUtil;
-import jodd.io.NetUtil;
 import jodd.util.StringUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
@@ -16,7 +14,6 @@ import org.jsoup.select.Elements;
 
 import java.io.*;
 import java.net.MalformedURLException;
-import java.net.URI;
 import java.net.URL;
 import java.net.URLConnection;
 import java.nio.channels.Channels;
@@ -110,6 +107,19 @@ public class GiteaMaster {
                 //备份原文件
                 boolean r = false;
                 if (isStoped) {
+                    //wait service stop normal
+                    int waitCount = 64;
+                    while (waitCount-- > 0) {
+                        //check gitea.exe can write
+                        try {
+                            RandomAccessFile randomAccessFile = new RandomAccessFile(exe, "rw");
+                            randomAccessFile.close();
+                            break;
+                        } catch (FileNotFoundException fnf) {
+                            //Ignored...
+                        }
+                        Thread.sleep(1000);
+                    }
                     try {
                         FileUtil.copyFile(file, new File(giteaFile));
                         //启动服务
@@ -131,10 +141,10 @@ public class GiteaMaster {
         return false;
     }
 
-    private boolean exec(String cmd) {
+    public boolean exec(String cmd) {
         Runtime runtime = Runtime.getRuntime();
         try {
-            Process process = runtime.exec(cmd);
+            Process process = runtime.exec("cmd.exe /c " + cmd);
             //打印执行的输出结果
             InputStream is = process.getInputStream();
             InputStreamReader isr = new InputStreamReader(is, "gbk"); //gbk：解决输出乱码
@@ -157,7 +167,7 @@ public class GiteaMaster {
         return false;
     }
 
-    private String calcHash(File fileName) throws NoSuchAlgorithmException, FileNotFoundException {
+    public String calcHash(File fileName) throws NoSuchAlgorithmException, FileNotFoundException {
         byte[] buffer = new byte[8192];
         MessageDigest digest = MessageDigest.getInstance("SHA-256");
         BufferedInputStream bis = new BufferedInputStream(new FileInputStream(fileName));
