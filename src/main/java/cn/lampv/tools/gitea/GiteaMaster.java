@@ -83,8 +83,12 @@ public class GiteaMaster {
                     } else {
                         logger.info("本地文件已经存在，Hash与最新版本不一致，将删除本地文件后重新下载");
                         FileUtil.delete(file);
+                        // goto Label down
                     }
-                } else {
+                }
+                if (!file.exists())
+                {
+                    // Label down:
                     // 2下载文件
                     String url = model.getUrl();
                     downloadFile(url, file);
